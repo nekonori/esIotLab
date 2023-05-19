@@ -1,0 +1,11 @@
+mov r0,#99h
+mov a,r0
+anl a,#0fh
+mov r1,a
+mov a,r0
+anl a,#0f0h
+swap a
+mov b,#0ah
+mul ab
+add a,r1
+mov r1,a
