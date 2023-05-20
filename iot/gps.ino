@@ -1,128 +1,26 @@
-#include <TinyGPS++.h> // library for GPS module
 #include <SoftwareSerial.h>
-#include <ESP8266WiFi.h>
-TinyGPSPlus gps;         // The TinyGPS++ object
-SoftwareSerial ss(4, 5); // The serial connection to the GPS device
-char *SSid = “phone”;
-char *Password = “pass” float latitude, longitude;
-int year, month, date, hour, minute, second;
-String date_str, time_str, lat_str, lng_str;
-int pm;
-WiFiServer server(80);
-void setup()
-{
-    Serial.begin(115200);
-    ss.begin(9600);
-    Serial.println();
-    Serial.print("Connecting to ");
-    Serial.println(ssid);
-    WiFi.begin(ssid, password);           // connecting to wifi
-    while (WiFi.status() != WL_CONNECTED) // while wifi not connected
-    {
-        delay(500);
-        Serial.print(".");
-    }
-    Serial.println("");
-    Serial.println("WiFi connected");
-    server.begin();
-    Serial.println("Server started");
-    Serial.println(WiFi.localIP()); // Print the IP address
+
+// Replace with your GPS module pins
+const int GPS_TX_PIN = 2;
+const int GPS_RX_PIN = 3;
+
+SoftwareSerial gpsSerial(GPS_RX_PIN, GPS_TX_PIN); // RX, TX
+
+void setup() {
+  Serial.begin(115200);
+  gpsSerial.begin(9600);
+
+  // Configure GPS module
+  gpsSerial.println("$PMTK251,9600*17"); // Set baud rate to 9600
+  gpsSerial.println("$PMTK300,1000,0,0,0,0*1C"); // Set update rate to 1Hz
 }
-void loop()
-{
-    while (ss.available() > 0)     // while data is available
-        if (gps.encode(ss.read())) // read gps data
-        {
-            if (gps.location.isValid()) // check whether gps location is valid
-            {
-                latitude = gps.location.lat();
-                lat_str = String(latitude, 6);
-                longitude = gps.location.lng();
-                lng_str = String(longitude, 6);
-            }
-            if (gps.date.isValid()) // check whether gps date is valid
-            {
-                date_str = "";
-                date = gps.date.day();
-                month = gps.date.month();
-                year = gps.date.year();
-                if (date < 10)
-                    date_str = '0';
-                date_str += String(date)
-                    date_str += " / ";
-                if (month < 10)
-                    date_str += '0';
-                date_str += String(month);
-                date_str += " / ";
-                if (year < 10)
-                    date_str += '0';
-                date_str += String(year);
-            }
-            if (gps.time.isValid()) // check whether gps time is valid
-            {
-                time_str = "";
-                hour = gps.time.hour();
-                minute = gps.time.minute();
-                second = gps.time.second();
-                minute = (minute + 30); // converting to IST
-                if (minute > 59)
-                {
-                    minute = minute - 60;
-                    hour = hour + 1;
-                }
-                hour = (hour + 5);
-                if (hour > 23)
-                    hour = hour - 24;
-                if (hour >= 12)
-                    pm = 1;
-                else
-                    pm = 0;
-                hour = hour % 12;
-                if (hour < 10)
-                    time_str = '0';
-                time_str += String(hour);
-                time_str += " : ";
-                if (minute < 10)
-                    time_str += '0';
-                time_str += String(minute);
-                time_str += " : ";
-                if (second < 10)
-                    time_str += '0';
-                time_str += String(second);
-                if (pm == 1)
-                    time_str += " PM ";
-                else
-                    time_str += " AM ";
-            }
-        }
-    WiFiClient client = server.available(); // Check if a client has connected
-    if (!client)
-    {
-        return;
-    }
-    // Prepare the response
-    String s = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n <!DOCTYPE
-               html > <html><head><title>
-                          GPS DATA</ title><style> ";
-               s += "a:link {background-color: YELLOW;text-decoration: none;}";
-    s += "table, th, td </style> </head> <body> <h1 style=";
-    s += "font-size:300%;";
-    s += " ALIGN=CENTER> NEO-6M GPS Readings</h1>";
-    s += "<p ALIGN=CENTER style="
-         "font-size:150%;"
-         "";
-    s += "> <b>Location Details</b></p> <table ALIGN=CENTER style=";
-    s += "width:50%";
-    s += "> <tr> <th>Latitude</th>";
-    s += "<td ALIGN=CENTER >";
-    s += lat_str;
-    s += "</td> </tr> <tr> <th>Longitude</th> <td ALIGN=CENTER >";
-    s += lng_str;
-    s += "</td> </tr> <tr> <th>Date</th> <td ALIGN=CENTER >";
-    s += date_str;
-    s += "</td></tr> <tr> <th>Time</th> <td ALIGN=CENTER >";
-    s += time_str;
-    s += "</td> </tr> </table> ";
-    s += "</body> </html>" client.print(s); // all the values are send to the webpage
-    delay(100);
+
+void loop() {
+  // Read incoming GPS data
+  while (gpsSerial.available()) {
+    char incomingData = gpsSerial.read();
+    Serial.print(incomingData);
+  }
+
+  delay(1000); // Wait for 1 second before reading again
 }
