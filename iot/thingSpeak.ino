@@ -1,53 +1,49 @@
 #include <ESP8266WiFi.h>
-#include "ThingSpeak.h"
-char msg[50];
-const char *ssid = "phone";    // your network SSID (name)
-const char *password = "pass"; // your network password
+#include <ThingSpeak.h>
+
+// Replace with your Wi-Fi credentials
+const char* ssid = "your_SSID";
+const char* password = "your_PASSWORD";
+
+// Replace with your ThingSpeak channel details and write API key
+unsigned long channelID = your_Channel_ID;
+const char* writeAPIKey = "your_write_API_key";
+
+// Analog input pin for temperature sensor
+const int temperaturePin = A0;
+
 WiFiClient client;
-unsigned long myChannelNumber = 0000000;   // Your channel number
-const char *myWriteAPIKey = "xxxxxxxxxxx"; // Your WriteAPI Key
-// Timer variables
-unsigned long lastTime = 0;
-unsigned long timerDelay = 30000;
-// Variable to hold temperature readings
-float temperatureC;
-int outputpin = A0;
-void setup()
-{
-    Serial.begin(115200); // Initialize serial
-    WiFi.mode(WIFI_STA);
-    ThingSpeak.begin(client); // Initialize ThingSpeak
-    if (WiFi.status() != WL_CONNECTED)
-    {
-        Serial.print("Attempting to connect");
-        while (WiFi.status() != WL_CONNECTED)
-        {
-            WiFi.begin(ssid, password);
-            delay(5000);
-        }
-        Serial.println("\nConnected.");
-    }
+
+void setup() {
+  Serial.begin(115200);
+
+  // Connect to Wi-Fi network
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(1000);
+    Serial.println("Connecting to WiFi...");
+  }
+  Serial.println("Connected to WiFi");
+
+  // Initialize ThingSpeak client
+  ThingSpeak.begin(client);
 }
-void loop()
-{
-    if ((millis() - lastTime) > timerDelay || 1)
-    {
-        int analogValue = analogRead(outputpin);
-        float millivolts = (analogValue / 1024.0) * 3300;
-        temperatureC = millivolts / 80 + random(10);
-        Serial.print("Temperature (ºC): ");
-        Serial.println(temperatureC);
-        int x = ThingSpeak.writeField(myChannelNumber, 1, temperatureC,
-                                      myWriteAPIKey);
-        if (x == 200)
-        {
-            Serial.println("Channel update successful.");
-        }
-        else
-        {
-            Serial.println("Problem updating channel. HTTP error code " +
-                           String(x));
-        }
-        lastTime = millis();
-    }
+
+void loop() {
+  // Read temperature sensor value
+  int sensorValue = analogRead(temperaturePin);
+  float temperature = (sensorValue / 1024.0) * 330.0;
+
+  // Send temperature data to ThingSpeak
+  ThingSpeak.writeField(channelID, 1, temperature, writeAPIKey);
+
+  Serial.print("Temperature: ");
+  Serial.print(temperature);
+  Serial.println(" degrees Celsius");
+
+  // Wait for 10 seconds before uploading again
+  delay(10000);
 }
+
+
+
